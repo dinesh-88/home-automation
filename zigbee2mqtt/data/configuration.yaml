@@ -1,0 +1,18 @@
+version: 5
+mqtt:
+  server: mqtt://mosquitto:1883
+  base_topic: zigbee2mqtt
+serial:
+  port: /dev/ttyACM0
+  adapter: zstack
+permit_join: true
+frontend:
+  enabled: true
+  port: 8080
+homeassistant:
+  enabled: false
+advanced:
+  log_level: info
+  network_key: GENERATE
+availability:
+  enabled: true

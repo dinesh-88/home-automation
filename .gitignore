@@ -1,0 +1,12 @@
+.env
+node_modules/
+.next/
+app/node_modules/
+app/.next/
+zigbee2mqtt/data/*
+!zigbee2mqtt/data/configuration.yaml
+mosquitto/data/*
+mosquitto/log/*
+*.log
+*.tsbuildinfo
+.DS_Store
