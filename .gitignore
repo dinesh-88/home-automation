@@ -10,3 +10,7 @@ mosquitto/log/*
 *.log
 *.tsbuildinfo
 .DS_Store
+
+# IDE settings
+.idea/
+.vscode/
