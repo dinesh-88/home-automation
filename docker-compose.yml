@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-homeauto}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme-db-password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is empty - export HA_DB_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-homeautomation}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -60,12 +60,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://homeauto:changeme-db-password@postgres:5432/homeautomation}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is not set}
       MQTT_URL: ${MQTT_URL:-mqtt://mosquitto:1883}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-changeme-generate-a-real-secret}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is empty - export HA_NEXTAUTH_SECRET}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme-admin-password}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is empty - export HA_ADMIN_PASSWORD}
 
 volumes:
   pgdata:
