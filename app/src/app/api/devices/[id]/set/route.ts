@@ -24,6 +24,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Body must be { command: { ... } }" }, { status: 400 });
   }
 
-  publishCommand(device.friendlyName, command);
+  if (!publishCommand(device.friendlyName, command)) {
+    return NextResponse.json({ error: "MQTT broker not connected" }, { status: 503 });
+  }
   return NextResponse.json({ ok: true });
 }

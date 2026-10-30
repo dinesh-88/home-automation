@@ -6,6 +6,7 @@ import { inferDeviceType } from "@/lib/deviceType";
 import { evaluateRulesForDevice } from "@/lib/ruleEngine";
 
 const BASE_TOPIC = "zigbee2mqtt";
+const SIMULATE_DEVICES = process.env.SIMULATE_DEVICES === "true";
 
 const globalForMqtt = globalThis as unknown as {
   mqttClient?: MqttClient;
@@ -26,6 +27,7 @@ export function startMqtt(): void {
 
   client.on("connect", () => {
     console.log(`[mqtt] connected to ${url}`);
+    if (SIMULATE_DEVICES) console.log("[mqtt] SIMULATE_DEVICES on: echoing /set commands as device state");
     client.subscribe(`${BASE_TOPIC}/#`, (err) => {
       if (err) console.error("[mqtt] subscribe error", err);
     });
@@ -73,6 +75,8 @@ async function handleMessage(topic: string, payload: Buffer): Promise<void> {
     await runExclusive(friendlyName, () => handleStateMessage(friendlyName, raw));
   } else if (parts.length === 2 && parts[1] === "availability") {
     await handleAvailabilityMessage(friendlyName, raw);
+  } else if (parts.length === 2 && parts[1] === "set" && SIMULATE_DEVICES) {
+    simulateDevice(friendlyName, raw);
   }
 }
 
@@ -128,12 +132,29 @@ async function handleAvailabilityMessage(friendlyName: string, raw: string): Pro
   deviceEvents.emit(DEVICE_UPDATE_EVENT, device);
 }
 
-/** Publishes a control command to zigbee2mqtt/<friendlyName>/set */
-export function publishCommand(friendlyName: string, command: Record<string, unknown>): void {
+/**
+ * Publishes a control command to zigbee2mqtt/<friendlyName>/set.
+ * Returns false if the MQTT client isn't connected and nothing was sent.
+ */
+export function publishCommand(friendlyName: string, command: Record<string, unknown>): boolean {
   const client = globalForMqtt.mqttClient;
   if (!client || !client.connected) {
     console.error("[mqtt] cannot publish, client not connected");
-    return;
+    return false;
   }
   client.publish(`${BASE_TOPIC}/${friendlyName}/set`, JSON.stringify(command));
+  return true;
+}
+
+// Dev-only stand-in for Zigbee2MQTT: echoes each /set command back on the
+// device's state topic, the way a real device would report its new state.
+// Lets the dashboard work end to end without a coordinator or paired devices.
+function simulateDevice(friendlyName: string, raw: string): void {
+  try {
+    const command = JSON.parse(raw);
+    if (!command || typeof command !== "object" || Array.isArray(command)) return;
+  } catch {
+    return;
+  }
+  globalForMqtt.mqttClient?.publish(`${BASE_TOPIC}/${friendlyName}`, raw);
 }
