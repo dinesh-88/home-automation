@@ -147,16 +147,32 @@ const prisma = new PrismaClient();
   reachable on the Docker Compose network by default. If you publish port 1883 beyond your
   LAN, switch to `password_file` auth in `mosquitto/config/mosquitto.conf`.
 
-## Local development (without Docker)
+## Local development (without Docker, Zigbee or internet)
+
+`app/scripts/run-local.sh` runs the whole stack on a plain Linux or macOS machine with
+Node 22 and PostgreSQL installed:
+
+- its own PostgreSQL cluster in `app/.localdata/` on port 5433 (trust auth, localhost only)
+- an in-process MQTT broker (`scripts/broker.mjs`, [aedes](https://github.com/moscajs/aedes)) instead of Mosquitto
+- a device simulator (`scripts/simulate.mjs`) instead of zigbee2mqtt: two lights, a heater,
+  a temperature sensor and a motion sensor. The bedroom warms while the heater is ON and
+  cools while it is OFF, so temperature rules can be tested end to end.
+- `next dev` on http://localhost:3000, admin login `admin@example.com` / `admin-local`
 
 ```bash
 cd app
-npm install
-npx prisma migrate dev   # needs a local/reachable Postgres; set DATABASE_URL
-npm run dev
+npm run local            # Ctrl-C stops everything; rm -rf .localdata to reset
+SIMULATOR=off npm run local   # bring your own MQTT messages
 ```
 
-You'll still need Mosquitto (and optionally Zigbee2MQTT) reachable at whatever `MQTT_URL`
-you set — `docker compose up -d mosquitto` is enough to develop the UI against fake MQTT
-messages published with `mosquitto_pub`.
-# home-automation
+**Offline Linux machines:** Prisma downloads its engines from `binaries.prisma.sh`, not
+npm, so fetch them first on a machine with internet and ship `app/vendor/` with the code:
+
+```bash
+cd app
+npm ci && scripts/fetch-prisma-engines.sh   # x86-64, OpenSSL 1.1 and 3.0 (~70 MB)
+# arm64: scripts/fetch-prisma-engines.sh linux-arm64-openssl-3.0.x linux-arm64-openssl-1.1.x
+```
+
+`run-local.sh` picks the engine matching the machine's CPU and OpenSSL version.
+`app/vendor/` is gitignored, so copy it over with the code rather than relying on `git clone`.

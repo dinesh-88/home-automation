@@ -14,3 +14,6 @@ mosquitto/log/*
 # IDE settings
 .idea/
 .vscode/
+app/.localdata/
+# Prisma Linux engines for offline installs; regenerate with app/scripts/fetch-prisma-engines.sh
+app/vendor/
